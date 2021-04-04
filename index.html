@@ -9,12 +9,18 @@
                 text-align : center;
                 font-size: 30pt;
             }
+            p.explanation{
+                font-size: 15pt;
+                text-align : center;
+                margin-bottom: 30px;
+            }
             div.weights-form{
                 margin-left: 40px;
                 margin-bottom: 40px;
             }
             div.drug-form-group{
-                text-align : center; 
+                text-align: left; 
+                margin-left: 200px;
             }
             div.drug-form div{
                 margin-top: 20px;
@@ -27,17 +33,18 @@
             }
             div.result{
                 display: inline-block;
-                text-align : center; 
+                text-align: center; 
                 border: solid;
                 border-color: blue;
                 border-width: 2px;
                 padding-top: 5px;
                 padding-bottom: 5px;
                 padding-left: 30px;
+                margin-left: 20px;
                 margin-bottom: 20px;
             }
             label.result{
-                font-size: 15pt;
+                font-size: 17pt;
             }
             input{
                 width: 80px;
@@ -47,6 +54,9 @@
             div.calculate-button{
                 text-align: center;
                 margin-top: 20px; 
+            }
+            button.copy-days{
+                display: inline-block;
             }
             button.calculate{
                 width: 200px;
@@ -62,7 +72,8 @@
         
     </head>
     <body>
-        <p class="title">フォームの数と小数点第何位まで表示するかをユーザーが選べるようにしてもいいかなと思っている</p>
+        <p class="title">散剤計算アプリ</p>
+        <p class="explanation">入力された値から一日製剤量、全日製剤量、体重当たりの一日成分量を計算します。　1mg/g = 0.1%</p>
 
         <div class="weights-form">
             <label>体重：</label><input type="number" step="0.01" id="weights"> kg
@@ -75,7 +86,7 @@
                 <label>規格：</label><input type="number" step="0.01" name="standard-per"> ％
             </div>
             <div class="prescription-days">
-            <label>日数：</label><input type="number" name="prescription-days"> 日
+            <label>日数：</label><input type="number" name="prescription-days"> 日 
             </div>
         </div>
         <div class="calculate-button">
@@ -94,12 +105,26 @@
                     $("div.drug-form-group").find("input[name=ingredient-weights]").attr("id", "ingredient-weights-" + i);
                     $("div.drug-form-group").find("input[name=standard-per]").attr("id", "standard-per-" + i);
                     $("div.drug-form-group").find("input[name=prescription-days]").attr("id", "prescription-days-" + i);
-                    var form_base = "<div class='drug-form' id='drug-form-" + i + "'>"  + $(".drug-form-group").html() + "</div>";
+                    $("div.drug-form-group").find("button[class='copy-days']").attr("id", i);
+                    var form_base = "<div class='drug-form' id='drug-form-" + i + "'>"  + $(".drug-form-group").html() + "<button class='copy-days' id=" + i + ">日数コピー</button>" +"</div>";
                     form += form_base;
                 }
                 $(".drug-form-group").html(form);
+                $("#0").remove();
             });
             
+            //コピーボタンで上の日数をコピーする関数
+            $(function(){
+                $("button.copy-days").click(function(){
+                    var button_id = Number($(this).attr("id"));
+                    var destination_id = "#prescription-days-" + button_id;
+                    var source_id = "#prescription-days-" + (button_id - 1);
+                    var source_days = $(source_id).val();
+                    $(destination_id).val(source_days);
+                });
+            });
+            
+            //計算ボタンが押されたら、計算して結果を表示する関数
             $(function(){
                 $("button.calculate").click(function(){
                     display_result(calculate_and_return_list());
