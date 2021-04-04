@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>散剤計算</title>
+        
+        <style>
+            p.title{
+                text-align : center;
+                font-size: 30pt;
+            }
+            div.weights-form{
+                margin-left: 40px;
+                margin-bottom: 40px;
+            }
+            div.drug-form-group{
+                text-align : center; 
+            }
+            div.drug-form div{
+                margin-top: 20px;
+                margin-bottom: 10px;
+                margin-right: 50px;
+                display: inline-block;
+            }
+            div.drug-form, div.weights-form{
+                font-size: 20pt;
+            }
+            div.result{
+                display: inline-block;
+                text-align : center; 
+                border: solid;
+                border-color: blue;
+                border-width: 2px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+                padding-left: 30px;
+                margin-bottom: 20px;
+            }
+            label.result{
+                font-size: 15pt;
+            }
+            input{
+                width: 80px;
+                height: 30px;
+                font-size: 20pt;
+            }
+            div.calculate-button{
+                text-align: center;
+                margin-top: 20px; 
+            }
+            button.calculate{
+                width: 200px;
+                padding: 10px;
+                background-color: #1e90ff;
+                border-radius: 15px;
+                color: white;
+                font-size: 20pt;
+                font-weight: 500;
+            }
+        </style>
+               
+        
+    </head>
+    <body>
+        <p class="title">フォームの数と小数点第何位まで表示するかをユーザーが選べるようにしてもいいかなと思っている</p>
+
+        <div class="weights-form">
+            <label>体重：</label><input type="number" step="0.01" id="weights"> kg
+        </div>
+        <div class="drug-form-group">
+            <div class="ingredient-weights">
+                <label>成分量：</label><input type="number" step="0.01" name="ingredient-weights"> mg
+            </div>
+            <div class="standard-per">
+                <label>規格：</label><input type="number" step="0.01" name="standard-per"> ％
+            </div>
+            <div class="prescription-days">
+            <label>日数：</label><input type="number" name="prescription-days"> 日
+            </div>
+        </div>
+        <div class="calculate-button">
+            <button class="calculate">計算</button>
+        </div>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <!-スクリプトを書く-!>
+        <script>
+            var x = 3;　//フォームの数
+            
+            //最初にフォームを表示する関数
+            $(function(){
+                var form = "";　//idを入れたフォームを格納する箱
+                //iの数だけそれぞれの要素にidに何番目かの情報を記録しながらフォームを作る
+                for(var i = 0; i < x; i++){
+                    $("div.drug-form-group").find("input[name=ingredient-weights]").attr("id", "ingredient-weights-" + i);
+                    $("div.drug-form-group").find("input[name=standard-per]").attr("id", "standard-per-" + i);
+                    $("div.drug-form-group").find("input[name=prescription-days]").attr("id", "prescription-days-" + i);
+                    var form_base = "<div class='drug-form' id='drug-form-" + i + "'>"  + $(".drug-form-group").html() + "</div>";
+                    form += form_base;
+                }
+                $(".drug-form-group").html(form);
+            });
+            
+            $(function(){
+                $("button.calculate").click(function(){
+                    display_result(calculate_and_return_list());
+                });
+            });
+            
+            
+            //計算して結果の配列を返す関数
+            function calculate_and_return_list(){
+                //inputからidで入力値を持ってくる関数
+                function get_value(name, i){
+                    var id = "#" +name + i;
+                    var value = $(id).val();
+                    return value;
+                }
+                //小数点第四位を四捨五入して、第三位までにする関数（第何位までにするかを変えられる）
+                function rounding(number){
+                    //小数点第三位まで表示したい
+                    var decimal_point = 3;
+                    var y = Math.pow(10, decimal_point);
+                    number = Math.round(number * y) / y;
+                    return number;
+                }
+                
+                //成分量と規格から一日製剤量を計算する関数
+                function calculate_one_day_dose(ingredient_weights, standard){
+                    var one_day_dose = Number(ingredient_weights) / Number(standard) / 10;
+                    return one_day_dose;
+                }
+                //一日製剤量から全日製剤量を計算する関数
+                function calculate_all_days_dose(one_day_dose, prescription_days){
+                    var all_days_dose = Number(one_day_dose) * Number(prescription_days);
+                    return all_days_dose;
+                }
+                
+                //ここから計算
+                var all_calculation_result_list = [];
+                for(let i = 0; i < x; i++){
+                    //一つの薬の計算結果のリスト（辞書で入れたいので連想配列）
+                    var one_calculation_result_list = {};
+                    //成分量が入力されていれば計算開始
+                    var ingredient_weights = get_value("ingredient-weights-", i)
+                    if(ingredient_weights != ""){
+                        //規格が入力されていれば一日製剤量計算（％）
+                        var standard_per = get_value("standard-per-", i);
+                        if(standard_per != ""){
+                            var one_day_dose = calculate_one_day_dose(ingredient_weights, standard_per);
+                            one_calculation_result_list["一日製剤量"] = rounding(one_day_dose) + "g";
+                            //日数も入力されていれば全日製剤量計算
+                            var prescription_days = get_value("prescription-days-", i);
+                            if(prescription_days != ""){
+                                var all_days_dose = calculate_all_days_dose(one_day_dose, prescription_days);
+                                one_calculation_result_list["全量"] = rounding(all_days_dose) + "g";
+                            }
+                        }
+                        
+                        //体重が入力されていれば体重当たりの一日成分量計算
+                        var weights = $("#weights").val();
+                        if(weights != ""){
+                            var ingredient_weights_per_weights = Number(ingredient_weights) / Number(weights);
+                            one_calculation_result_list["体重当たりの一日成分量"] = rounding(ingredient_weights_per_weights) + "mg";
+                        }
+                    }
+                    all_calculation_result_list.push(one_calculation_result_list);
+                }//ここまで一つの薬の計算
+                return all_calculation_result_list;
+            }//ここまでが計算して結果のリストを返す関数
+            
+            //計算で出た値のリストから、結果を表示する関数
+            function display_result(list){
+                $(".result").remove();
+                for(var i = 0; i < x; i++){
+                    var one_calculation_result_list = list[i];
+                    if(Object.keys(one_calculation_result_list).length != 0){
+                        console.log(Object.keys(one_calculation_result_list).length);
+                        var text = "<div class='result'><label class='result'>";
+                        for(var key in one_calculation_result_list){
+                            value = one_calculation_result_list[key];
+                            text += key + ": " + value + "　　"; 
+                        }
+                        var div = "div#drug-form-" + i;
+                        $(div).after(text);
+                    }
+                }
+            }
+            
+        </script>
+    
+    
+    </body>
+</html>
